@@ -1,0 +1,229 @@
+
+$ hadoop fs -ls /user 
+$ ps -ef|grep -i manager 
+$ ps -ef|grep -i node 
+
+ps -fu hdfs --> to see node manager, resource manager
+ps -fu yarn --> to see YARN nodemanager & resource manager 
+
+** Connecting to Mysql **
+
+mysql -u retail_dba -p ENTER 
+password = cloudera 
+mysql>
+mysql> use retail_db;
+mysql> show tables;
+exit
+$ sqoop help 
+$ hadoop fs -ls /user/cloudera --> "/user/cloudera" is the name space. This command also gives the list of the directories in this name space 
+$ hadoop fs -mkdir /user/cloudera/sqoop_import --> this will create a directory called sqoop_import in the name space /user/cloudera 
+
+The below stmt is to connect to mysql using retail_dba user with password cloudera
+
+$ sqoop list-databases \
+ --connect "jdbc:mysql://quickstart.cloudera:3306" \
+ --username retail_dba \
+ --password cloudera
+
+# quickstart.cloudera = Host Name 
+
+$ sqoop list-tables \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username retail_dba \
+ --password cloudera
+
+Before running import command, we have to evaluate OR validate the necessary permissions on tables using eval command:
+
+$ sqoop eval \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username retail_dba \
+ --password cloudera \
+ --query "select * from departments"
+
+Google search in Sqoop user guide 
+versions Sqoop & Sqoop 2
+Good doc is V1.2
+
+$ sqoop import --help --> for help on import arguments
+$ hostname -f --> to find the hostname. here output is quickstart.cloudera 
+
+
+
+** import-all-tables  **
+
+$ sqoop import-all-tables \
+   -m 12 \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --warehouse-dir=/user/cloudera/sqoop_import 
+
+$ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
+$ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
+$ hadoop fs -tail /user/cloudera/sqoop_import/order_items/part-m-00011  # to see the data in this file 
+$ hadoop fs -cat /user/cloudera/sqoop_import/order_items/part-m-*|wc -l # to see the records count
+
+$ sqoop eval \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username retail_dba \
+  --password cloudera \
+  --query "select count(1) from order_items" --> to find the number of records using eval command
+
+******************  https://www.youtube.com/watch?v=x1u5Fdppvd8 - Hadoop Certification - 02 Sqoop Import ******************
+
+# Avro file format is similar to JSON file format
+# If no file format given, by default is text file 
+ i.Warehouse directory is /user/cloudera/sqoop_import  --> this is the directory we created in HDFS to store mysql tables
+ i.BoundaryValQuery will apply min & max values of primary key values of the table, using that it will divide into exclusive buckets. Playlist building enterprise 	using hadoop using boundary queries 
+ i.-m 12 is number of mappers is used to split each table into 12 threads and import data into HDFS. As we have 6 tables, it will run 6 MR jobs each with 12 threads 
+	to get the data into HDFS to warehouse directory which we specified 
+ i. By default number of mappers are 4   
+ i. comma is the default delimiter of the data 
+ i. Run the eval command always to evaluate the data in HDFS instead of logging into MySQL
+
+https://www.youtube.com/watch?v=x1u5Fdppvd8 : Hadoop Certification - 02 Sqoop Import
+** HIVE ** 
+
+$ hadoop fs -ls /user/hive/warehouse ---> This is also considered as HIVE default database. The out put this command we can get the directories with db extn and w/o db extn
+
+$ hive 
+hive> create database sqoop_import;
+hive> dfs -ls /user/hive/warehouse --> Here, we used dfs command instead of "hadoop fs" --> OP is list of the tables under this directory including sqoop_import table
+# we no need to have warehouse directory when we run the import command 
+
+$ sqoop import-all-tables \
+ --num-mappers 1 \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username=reatil_dba \
+ --password=cloudera \
+ --hive-import \
+ --hive-overwrite \
+ --create-hive-table \
+ --compress \
+ --compresession-codec org.apache.hadoop.io.compress.SnappyCodec \
+ --outdir java_files 
+
+# connect to hive in diff terminal and use the below commands 
+hive>show tables;
+hive>describe formatted departments; #this will give the location of the table departments like hdfs://quickstart.cloudera:8020/user/hive/warhouse/departments THEN run 
+hive>dfs -ls /user/hive/warehouse/departments #this will show the path of the file for departments in the form of /user/hive/warhouse/departments/part-m-00000.snappy
+hive>dfs -du -s -h /user/hive/warehouse/order_items # this will show the size of the file 
+hive>dfs -tail /user/hive/warehouse/order_items/part-m-00000.snappy; # this will show the data of this file part-m-00000.snappy in garbled format
+hive>select count(1) from departments; #to see the count of the records in departments tables ALSO run the /eval command in mysql database to find the number of records. Basically we try to match number of records from MySQL = Hive table
+
+# hadoop fs --> Linux interface 
+# dfs --> Hive Command Line Interface (CLI)
+
+**********   https://www.youtube.com/watch?v=7oZ_CctyS5Q - Hadoop Certification - 03 Sqoop Import  ************************
+
+Errors:
+Listener Error / connection refused - Ans is Check if HDFS is running in cloudera manager 
+
+
+# Basic import 
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+--target-dir /user/cloudera/departments 
+
+$ hadoop fs -cat /user/cloudera/departments/part*
+$ hadoop fs -cat /user/cloudera/departments/part-m-00001 --> to see specific file 
+
+# insert new records in departments table 
+$ sqoop eval \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username retail_dba \
+ --password cloudera \
+ --query "insert into departments value (8000,'TESTING')"
+
+# remove the file 
+$hadoop fs -rm -R /user/cloudera/departments THEN RUN IMPORT AGAIN with 2 mappers 
+# import again with table argument
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+-m 2
+--target-dir /user/cloudera/departments 
+
+# Using boundary query 
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+-m 2
+--target-dir /user/cloudera/departments 
+--boundary-query "select min(department_id), max(department_id) from departments where department_id<>8000"
+
+$ hadoop fs -ls /user/cloudera/departments 
+# here we can see data evenly distributed among the file. Before boundary query , data skewed into unevenly into file. 
+
+# Boundary query custom - It's very imp to supersede the importance of the query parameters 
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+-m 2
+--target-dir /user/cloudera/departments 
+--boundary-query "select 2, 8 from departments limit 1"
+
+# with --columns control argument. This will import only the required columns
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+-m 2
+--target-dir /user/cloudera/departments 
+--boundary-query "select 2, 8 from departments limit 1"
+--columns department_id,department_name
+
+# --table & --query are mutually exclusive. We cannot use both in the same query 
+
+# split-by
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments \
+-m 2
+--target-dir /user/cloudera/departments 
+--boundary-query "select 2, 8 from departments limit 1"
+--split-by department_id
+
+#--query --> if we have 2 tables in source and import into HDFS. Make sure that we have $CONDITIONS to escape where condition
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--query="select * from orders join order_times on orders.order_id =order_items.order_item_order_id where \$CONDITIONS" \
+--target-dir /user/cloudera/order_join \
+--split-by order_id \
+--num-mappers 4 
+
+# -- Getting delta (--where)
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --split-by department_id \
+  --where "department_id > 7" \
+  --outdir java_files
+
+********** https://www.youtube.com/watch?v=HOzju75gNQs - Hadoop Certification - 04 Sqoop Import  **********
+
+
+
+
+
+
