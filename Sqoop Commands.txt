@@ -98,21 +98,29 @@ $ sqoop import-all-tables \
 
 # connect to hive in diff terminal and use the below commands 
 hive>show tables;
-hive>describe formatted departments; #this will give the location of the table departments like hdfs://quickstart.cloudera:8020/user/hive/warhouse/departments THEN run 
-hive>dfs -ls /user/hive/warehouse/departments #this will show the path of the file for departments in the form of /user/hive/warhouse/departments/part-m-00000.snappy
-hive>dfs -du -s -h /user/hive/warehouse/order_items # this will show the size of the file 
-hive>dfs -tail /user/hive/warehouse/order_items/part-m-00000.snappy; # this will show the data of this file part-m-00000.snappy in garbled format
-hive>select count(1) from departments; #to see the count of the records in departments tables ALSO run the /eval command in mysql database to find the number of records. Basically we try to match number of records from MySQL = Hive table
+hive>describe formatted departments;
+#this will give the location of the table departments like hdfs://quickstart.cloudera:8020/user/hive/warhouse/departments 
+# THEN run below command
+hive>dfs -ls /user/hive/warehouse/departments
+#this will show the path of the file for departments in the form of /user/hive/warhouse/departments/part-m-00000.snappy
 
-# hadoop fs --> Linux interface 
-# dfs --> Hive Command Line Interface (CLI)
+hive>dfs -du -s -h /user/hive/warehouse/order_items
+# this will show the size of the file 
+
+hive>dfs -tail /user/hive/warehouse/order_items/part-m-00000.snappy;
+# this will show the data of this file part-m-00000.snappy in garbled format
+
+hive>select count(1) from departments;
+# to see the count of the records in departments tables ALSO run the /eval command in mysql database to find the number of records. Basically we try to match number of records from MySQL = Hive table
+
+# hadoop fs --> Linux interface commands 
+# dfs --> Hive Command Line Interface (CLI) commands
 
 ****************   https://www.youtube.com/watch?v=7oZ_CctyS5Q - Hadoop Certification - 03 Sqoop Import  ************************
 
 ERRORS:
 1. Listener Error / connection refused - Ans is Check if HDFS is running in cloudera manager
 2. Check if HDFS is in safemode 
-
 
 # Basic import 
 sqoop import \
