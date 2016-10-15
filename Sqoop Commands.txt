@@ -213,8 +213,6 @@ sqoop import \
 --table departments_nopk \
 --target-dir /user/cloudera/departments
 
-
-
 #--query --> if we have 2 tables in source and import into HDFS. Make sure that we have $CONDITIONS to escape where condition
 sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
@@ -288,8 +286,6 @@ $ sqoop import \
   --hive-table sqoop_import.materials \
   --create-hive-table \
   --outdir java_files 
-
-
 
 sqoop import \
   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
