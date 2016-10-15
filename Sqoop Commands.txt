@@ -224,6 +224,98 @@ sqoop import \
 
 *******************  https://www.youtube.com/watch?v=HOzju75gNQs - Hadoop Certification - 04 Sqoop Import  *********************
 
+# Demo on importing individual tables into Hive 
+# we can create the table while import & we can create the table then import
+# connect Hive 
+# create database sqoop_import and use sqoop_import 
+hive> create table departments (department_id int, department_name string);
+hive> describe formatted departments;
+# with describe formatted departments command , we can find the target directory in Hive
+
+# Importing table departments into Hive using Sqoop with hive-overwrite option
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --hive-home /user/hive/warehouse \
+  --hive-import \
+  --hive-overwrite \
+  --hive-table sqoop_import.departments \
+  --outdir java_files 
+
+# When data moved from MySQL to Hive, it will store in temp directory of the user which is /user/cloudera
+$ hadoop fs -rm -R /user/cloudera/departments (if required)
+# Remove the directory /user/cloudera/departments if it already exist
+# Basically we imported data from MySQL to /user/hive/warehouse/sqoop_import.db/departments 
+
+# we can also append to table by using --hive-import  *** ERROR **
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --hive-home /user/hive/warehouse \
+  --hive-import \
+  --hive-table sqoop_import.departments_test \
+  --create-hive-table \
+  --outdir java_files 
+
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --hive-home /user/hive/warehouse \
+  --hive-import \
+  --hive-table sqoop_import.departments \
+  --outdir java_files 
+
+************  https://www.youtube.com/watch?v=ntSK_oJtWlQ -  05 Sqoop Import Incremental ************
+
+# run the eval command to check the data in departments table 
+$ sqoop eval \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username retail_dba \
+ --password cloudera \
+ --query "select * from departments"
+
+# to capture the delta/incremental records WITH --append 
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/cloudera/sqoop_import/departments \
+  --append \
+  --where "department_id > 7" \
+  --outdir java_files
+
+# we have to see log file for last value.This command will load the duplicates because of --append argument
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/cloudera/sqoop_import/departments \
+  --append \
+  --check-column "department_id" \
+  --incremental append \
+  --last-value 7 \
+  --outdir java_files
+
+# Incremental load with check-column/incremental/last-value 
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/cloudera/sqoop_import/departments \
+  --append \
+  --check-column "department_id" \
+  --incremental lastmodified \
+  --last-value 8000 \
+  --outdir java_files
 
 
 
