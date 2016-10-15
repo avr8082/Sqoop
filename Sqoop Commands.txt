@@ -1,4 +1,3 @@
-
 $ hadoop fs -ls /user 
 $ ps -ef|grep -i manager 
 $ ps -ef|grep -i node 
@@ -128,7 +127,7 @@ sqoop import \
 --username=retail_dba \
 --password=cloudera \
 --table departments \
---target-dir /user/cloudera/departments 
+--target-dir /user/cloudera/departments
 
 $ hadoop fs -cat /user/cloudera/departments/part*
 $ hadoop fs -cat /user/cloudera/departments/part-m-00001 --> to see specific file 
@@ -187,7 +186,7 @@ sqoop import \
 
 # --table & --query are mutually exclusive. We cannot use both in the same query 
 
-# split-by
+# --split-by
 sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 --username=retail_dba \
@@ -198,12 +197,30 @@ sqoop import \
 --boundary-query "select 2, 8 from departments limit 1"
 --split-by department_id
 
+# Demonstrate --split by 
+# connect to hive 
+$ hive -u retail_dba -p ENTER 
+# enter password 
+hive>use retail_db;
+hive>create table departments_nopk as select * from departments;
+
+# run the basic import with table "departments_nopk"
+
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table departments_nopk \
+--target-dir /user/cloudera/departments
+
+
+
 #--query --> if we have 2 tables in source and import into HDFS. Make sure that we have $CONDITIONS to escape where condition
 sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 --username=retail_dba \
 --password=cloudera \
---query="select * from orders join order_times on orders.order_id =order_items.order_item_order_id where \$CONDITIONS" \
+--query="select * from orders join order_items on orders.order_id =order_items.order_item_order_id where \$CONDITIONS" \
 --target-dir /user/cloudera/order_join \
 --split-by order_id \
 --num-mappers 4 
@@ -224,7 +241,7 @@ sqoop import \
 
 *******************  https://www.youtube.com/watch?v=HOzju75gNQs - Hadoop Certification - 04 Sqoop Import  *********************
 
-# Demo on importing individual tables into Hive 
+# Demo on importing individual tables into HIVE
 # we can create the table while import & we can create the table then import
 # connect Hive 
 # create database sqoop_import and use sqoop_import 
@@ -244,7 +261,7 @@ $ sqoop import \
   --hive-table sqoop_import.departments \
   --outdir java_files 
 
-# When data moved from MySQL to Hive, it will store in temp directory of the user which is /user/cloudera
+# When data moved from MySQL to Hive, it will store in TEMP DIRECTORY of the user which is /user/cloudera
 $ hadoop fs -rm -R /user/cloudera/departments (if required)
 # Remove the directory /user/cloudera/departments if it already exist
 # Basically we imported data from MySQL to /user/hive/warehouse/sqoop_import.db/departments 
@@ -260,6 +277,19 @@ $ sqoop import \
   --hive-table sqoop_import.departments_test \
   --create-hive-table \
   --outdir java_files 
+
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table materials \
+  --hive-home /user/hive/warehouse \
+  --hive-import \
+  --hive-table sqoop_import.materials \
+  --create-hive-table \
+  --outdir java_files 
+
+
 
 sqoop import \
   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
@@ -291,7 +321,8 @@ $ sqoop import \
   --where "department_id > 7" \
   --outdir java_files
 
-# we have to see log file for last value.This command will load the duplicates because of --append argument
+# we have to see log file for last value.This command will load DUPLICATE records because of --append argument
+
 $ sqoop import \
   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
   --username=retail_dba \
@@ -304,7 +335,8 @@ $ sqoop import \
   --last-value 7 \
   --outdir java_files
 
-# Incremental load with check-column/incremental/last-value 
+
+# Incremental load with check-column/incremental/last-value - Yet to check with lastmodified option
 $ sqoop import \
   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
   --username=retail_dba \
@@ -316,6 +348,117 @@ $ sqoop import \
   --incremental lastmodified \
   --last-value 8000 \
   --outdir java_files
+
+************  https://www.youtube.com/watch?v=GyA6lhBIe9g - 01 Sqoop Export (Export from HDFS to MySQL) ******************************
+
+# Typical export will insert into target table.Update can be done with update (update-key, update-mode) arguments
+# 1. Create one table in MySQL with where 1=2 condition so it will not insert any records but it will create the table order_items_export.
+mysql> create table order_items_export as select * from order_items where 1=2;
+
+# export from /user/cloudera/sqoop_import/order_items data into mySQL table order_items_export 
+# sqoop export doesnot show any diff between Hive and HDFS. Both are treated in similar fashion. 
+# None of the imprort parameters will not be available in export 
+
+# Simple export
+$ sqoop export \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table order_items_export \
+  --export-dir /user/cloudera/sqoop_import/order_items \
+  --batch \
+  --outdir java_files
+
+*************  https://www.youtube.com/watch?v=laMBRY9TJDA - 02 Sqoop Export - Merge/Upsert  *******************************************
+# create a local file and merge with the existing data in departments table
+$ vi departments_export 
+# enter some records 
+$ cat departments_export 
+# create a directory departments under /user/cloudera/sqoop_import
+$ hadoop fs -mkdir /user/cloudera/sqoop_import/departments_export 
+
+# merge the local file departments_export under "/home/cloudera/departments_export" into "/user/cloudera/sqoop_import/departments_export"
+
+$ hadoop fs -put /home/cloudera/departments_export /user/cloudera/sqoop_import/departments_export
+# moving data to export.csv file 
+$ hadoop fs -mv /user/cloudera/sqoop_import/departments_export/departments_export /user/cloudera/sqoop_import/departments_export/export.csv
+
+# update-mode allowinsert is to simulate merge or upsert operation 
+$ sqoop export \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --export-dir /user/cloudera/sqoop_import/departments_export \
+  --batch \
+  --outdir java_files \
+  -m 1 \
+  --update-key department_id \
+  --update-mode allowinsert 
+
+# after the above script, login to mySQL then check the departments table or run eval command in HDFS to check the data updated 
+$ sqoop eval \
+ --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+ --username retail_dba \
+ --password cloudera \
+ --query "select * from departments"
+
+# We updated the vi file with 2 records like 7, Fan Shop & 10000 testing export. Here, WITHOUT --update-mode allowinsert argument, only record with department_id=7 updated and 10000 will not be updated. In general WITHOUT updatemode argument, by default it is with only update
+
+$ sqoop export \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --export-dir /user/cloudera/sqoop_import/departments_export \
+  --batch \
+  --outdir java_files \
+  -m 1 \
+  --update-key department_id \
+
+
+sqoop export \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments_export \
+  --export-dir /user/cloudera/sqoop_import/departments_export \
+  --batch \
+  --outdir java_files \
+  -m 1 \
+  --update-key department_id \
+  --update-mode allowinsert 
+
+# if the table doesn't have primary key, DUPLICATES will be inserted 
+# create the table in mysql with no primary key and run the export script with update-mode allowinsert.DUPLICATE records will be inserted into table departments_export since we dont have the primary key. That's why it will insert records
+mysql> create table departments_export as select * from departments;
+
+$ sqoop export \
+>   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+>   --username=retail_dba \
+>   --password=cloudera \
+>   --table departments_export \
+>   --export-dir /user/cloudera/sqoop_import/departments_export \
+>   --batch \
+>   --outdir java_files \
+>   -m 1 \
+>   --update-key department_id \
+>   --update-mode allowinsert
+
+# --staging-table (if we don't want to directly update the destination table, we can write into staging table first)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
