@@ -746,8 +746,8 @@ hadoop fs -cat /user/cloudera/sqoop_merge/departments/part*
 $ sqoop import --help # to get the help on sqoop import command
 
 
-********************** copy from Dgadiraju Github ********************************************************
-**********************************************************************************************************
+********************** COPY FROM DGADIRAJU GITHUB ACCOUNT  ********************************************************
+*******************************************************************************************************************
 sqoop list-databases \
   --connect "jdbc:mysql://quickstart.cloudera:3306" \
   --username retail_dba \
