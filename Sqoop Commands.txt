@@ -41,7 +41,10 @@ $ sqoop eval \
  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
  --username retail_dba \
  --password cloudera \
- --query "select * from departments"
+ --query "select * from departments limit 10"  OR --query "describe orders"
+ 
+ 
+ 
 It will provide the list of the tables in mysql database "retail_db"
 
 ****** HELP ***********
@@ -127,9 +130,9 @@ Warehouse Dir = Directory will be created as table name and copied. Means , we M
   --warehouse-dir /user/cloudera/sqoop_import \
   --delete-target-dir
    
-  IT will generate the code, using column names,data types of the columns, then only it will write into HDFS. 
-
-  
+  IT will generate the code, using column names,data types of the columns, then only it will write into HDFS. Next, it will create .java file and copy data. 
+  Bouding vals query use min value(1) and max value(68883 for example) into 4 buckets/splits. 68883/4 = 17220. We can see this info in sqoop job log. Each thread will get mutually exclusive data. 
+ 
  
 $ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
 $ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
@@ -267,7 +270,7 @@ sqoop import \
 # --table & --query are mutually exclusive. We cannot use both in the same query 
 
 # --split-by
-sqoop import \
+$ sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 --username=retail_dba \
 --password=cloudera \
@@ -276,6 +279,21 @@ sqoop import \
 --target-dir /user/cloudera/departments 
 --boundary-query "select 2, 8 from departments limit 1"
 --split-by department_id
+(you use indexed column with --split-by) 
+If it is numberic it will pass, if it is string, we have to bypass "-Dorg.apache.sqoop.splitter.allow_text_splitter=true" parameter. By default, --split-by will expect numberic column to be given (for ex: department_id / order_id)
+
+*** USING -Dorg.apache.sqoop.splitter.allow_text_splitter=true 
+$ sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table orders \
+--warehouse-dir /user/cloudera/orders \
+--delete-target-dir \
+--split-by order_status \
+-Dorg.apache.sqoop.splitter.allow_text_splitter=true
+##### with this parameter it is not working ######
+
 
 # Demonstrate --split by 
 # connect to hive 
