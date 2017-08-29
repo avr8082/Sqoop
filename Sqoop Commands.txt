@@ -4,8 +4,8 @@ $ hadoop fs -ls /user
 $ ps -ef|grep -i manager 
 $ ps -ef|grep -i node 
 
-ps -fu hdfs --> to see node manager, resource manager
-ps -fu yarn --> to see YARN nodemanager & resource manager 
+ps -fu hdfs --> to see name node, data node, secondary name node running or not
+ps -fu yarn --> to see YARN nodemanager & resource manager running or not 
 
 # Connecting to Mysql 
 
@@ -21,6 +21,7 @@ $ hadoop fs -mkdir /user/cloudera/sqoop_import --> this will create a directory 
 
 The below stmt is to connect to mysql using retail_dba user with password cloudera
 
+$ sqoop list-databases --connect "jdbc:mysql://gw01.itversity.com:3306" --username retail_dba --password itversity
 $ sqoop list-databases \
  --connect "jdbc:mysql://quickstart.cloudera:3306" \
  --username retail_dba \
@@ -40,12 +41,17 @@ $ sqoop eval \
  --password cloudera \
  --query "select * from departments"
 
+ERROR:
+If any error with hostname, check with admins what is base location for the jar files
+If could not load data with oracle, means JDBC jar file is missing 
+
+
 Google search in Sqoop user guide 
 versions Sqoop & Sqoop 2
 Good doc is V1.2
 
-$ sqoop import --help --> for help on import arguments
-$ hostname -f --> to find the hostname. here output is quickstart.cloudera 
+$ sqoop import --help -->    for help on import arguments
+$ hostname -f -->     to find the hostname. here output is "quickstart.cloudera"
 
 # import-all-tables 
 $ sqoop import-all-tables \
@@ -54,7 +60,7 @@ $ sqoop import-all-tables \
   --username=retail_dba \
   --password=cloudera \
   --warehouse-dir=/user/cloudera/sqoop_import 
-
+ 
 $ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
 $ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
 $ hadoop fs -tail /user/cloudera/sqoop_import/order_items/part-m-00011  # to see the data in this file 
