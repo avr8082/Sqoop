@@ -75,7 +75,6 @@ $ sqoop import --help -->    for help on import arguments
 $ hostname -f -->     to find the hostname. here output is "quickstart.cloudera"
 *** Never sqoop import into your home directory.
 
-
 # import-all-tables 
 $ sqoop import-all-tables \
    -m 12 \
@@ -83,6 +82,8 @@ $ sqoop import-all-tables \
   --username=retail_dba \
   --password=cloudera \
   --warehouse-dir=/user/cloudera/sqoop_import 
+ 
+ 
  
  *** ONE TABLE IMPORT
  $ sqoop import \
@@ -92,15 +93,23 @@ $ sqoop import-all-tables \
    --table orders \
   --target-dir /user/cloudera/sqoop_import/orders
   
-Target Dir = You need to provide the base directory the data needs to be copied 
-Warehouse Dir = Directory will be created as table name and copied 
+Target Dir = You need to provide the base directory where data needs to be copied. Here, directory is /user/cloudera/sqoop_import/orders
+Warehouse Dir = Directory will be created as table name and copied. Means , we MUST provide base directory like: /user/cloudera/sqoop_import ONLY (WTTHOUT TABLE NAME like below). It will create the sub directory with table name under base directory
 
+***USING WAREHOUSE DIRECTORY
+ $ sqoop import \
+   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+   --username retail_dba \
+   --password cloudera \
+   --table orders \
+  --warehouse-dir /user/cloudera/sqoop_import
  
  
 $ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
 $ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
 $ hadoop fs -tail /user/cloudera/sqoop_import/order_items/part-m-00011  # to see the data in this file 
 $ hadoop fs -cat /user/cloudera/sqoop_import/order_items/part-m-*|wc -l # to see the records count
+$ hadoop fs -rm -R /user/cloudera/sqoop_import/orders 
 
 $ sqoop eval \
   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
