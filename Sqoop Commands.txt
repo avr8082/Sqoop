@@ -41,9 +41,14 @@ $ sqoop eval \
  --password cloudera \
  --query "select * from departments"
 
-ERROR:
-If any error with hostname, check with admins what is base location for the jar files
-If could not load data with oracle, means JDBC jar file is missing 
+ERRORS:
+1. If any error with hostname, check with admins what is base location for the jar files
+2. If could not load data with oracle, means JDBC jar file is missing 
+3. Connection Refused (Solution : either hostname or port # correctly. Provide correct hostname & port #) 
+Validate hostname and port # using telnet command like below:
+$ telnet gw01.itversity.com 3306 
+Connected to gw01.itversity.com 3306 
+If everything correct, there must be FIREWALL blocking.Check with Admins.
 
 
 Google search in Sqoop user guide 
