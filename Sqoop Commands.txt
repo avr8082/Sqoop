@@ -1,4 +1,6 @@
 sqoop 1.4.6 
+Sqoop is to get the data from RDBMS using jdbc into HDFS or other databases.
+Sqoop import-all-tables will import all tables once from mysql database or Oracle schema
 
 $ hadoop fs -ls /user 
 $ ps -ef|grep -i manager 
@@ -40,8 +42,14 @@ $ sqoop eval \
  --username retail_dba \
  --password cloudera \
  --query "select * from departments"
+It will provide the list of the tables in mysql database "retail_db"
 
-ERRORS:
+****** HELP ***********
+$ sqoop help eval 
+$ sqoop help list-databases 
+
+
+******  ERRORS ******
 1. If any error with hostname, check with admins what is base location for the jar files
 2. If could not load data with oracle, means JDBC jar file is missing 
 3. Connection Refused (Solution : either hostname or port # correctly. Provide correct hostname & port #) 
@@ -49,14 +57,24 @@ Validate hostname and port # using telnet command like below:
 $ telnet gw01.itversity.com 3306 
 Connected to gw01.itversity.com 3306 
 If everything correct, there must be FIREWALL blocking.Check with Admins.
+OR $ nc gw01.itversity.com 3306 
+
+4. Access denied for user "gw01.itversity.com " -- In this case incorrect user name or password provided as part of script.
+5. Sqoop is generic tool. It will work with many databases. With Oracle 12c , trying to database as multi tenant. 
+If you run the same the same command with list-databases, it will run the list of the schemas NOT list of the tables. This is difference.So, the behavior is little different with different databases.
+
 
 
 Google search in Sqoop user guide 
 versions Sqoop & Sqoop 2
 Good doc is V1.2
 
+****SQOOP IMPORT ********
+
 $ sqoop import --help -->    for help on import arguments
 $ hostname -f -->     to find the hostname. here output is "quickstart.cloudera"
+*** Never sqoop import into your home directory.
+
 
 # import-all-tables 
 $ sqoop import-all-tables \
@@ -65,6 +83,19 @@ $ sqoop import-all-tables \
   --username=retail_dba \
   --password=cloudera \
   --warehouse-dir=/user/cloudera/sqoop_import 
+ 
+ *** ONE TABLE IMPORT
+ $ sqoop import \
+   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+   --username retail_dba \
+   --password cloudera \
+   --table orders \
+  --target-dir /user/cloudera/sqoop_import/orders
+  
+Target Dir = You need to provide the base directory the data needs to be copied 
+Warehouse Dir = Directory will be created as table name and copied 
+
+ 
  
 $ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
 $ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
