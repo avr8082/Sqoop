@@ -103,7 +103,33 @@ Warehouse Dir = Directory will be created as table name and copied. Means , we M
    --password cloudera \
    --table orders \
   --warehouse-dir /user/cloudera/sqoop_import
+  
+ ***USING --append 
+ #This will append the files with the existing files 
+ hadoop fs -ls /user/cloudera/sqoop_import/orders/part*
+ BEFORE: 4 files 
+ AFTER: 8 files 
  
+  $ sqoop import \
+   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+   --username retail_dba \
+   --password cloudera \
+   --table orders \
+  --warehouse-dir /user/cloudera/sqoop_import \
+  --append 
+  
+  ***USING --delete-target-dir (It will delete the target directory and copy 4 files. 4 files due to number of default mappers using --numb-mappers)
+   $ sqoop import \
+   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+   --username retail_dba \
+   --password cloudera \
+   --table orders \
+  --warehouse-dir /user/cloudera/sqoop_import \
+  --delete-target-dir
+   
+  IT will generate the code, using column names,data types of the columns, then only it will write into HDFS. 
+
+  
  
 $ hadoop fs -ls /user/cloudera/sqoop_import --> to see imported tables 
 $ hadoop fs -ls /user/cloudera/sqoop_import/departments --> to see the files of tables ( for ex: /user/cloudera/sqoop_import/order_items/part-m-00011) 
