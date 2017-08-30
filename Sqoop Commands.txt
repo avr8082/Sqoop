@@ -146,12 +146,37 @@ $ sqoop eval \
   --password cloudera \
   --query "select count(1) from order_items" --> to find the number of records using eval command
   
+  Sqoop supports 4 file formats 
+  1. Avro (--as-avrodatafile) --> it will give you avsc file with metadata  
+  2. Text (--as-textfile) --> this will have delimiter 
+  3. Sequence (--as-sequencefile) --> this also capture metadata 
+  4. Parquet (--as-parquetfile)
+  
+  For older clusters, parquet file may not work some times
+  
+    $ sqoop import \
+   --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+   --username retail_dba \
+   --password cloudera \
+   --table orders \
+  --warehouse-dir /user/cloudera/sqoop_import \
+  --delete-target-dir \
+  --as-sequencefile 
+  
+  Meta data file = orders.java 
+  
+  $ cat orders.avsc 
+  
+  Smoke testing = UAT team test the entire process with test data after deployment in production 
+  
 ******************      https://www.youtube.com/watch?v=x1u5Fdppvd8 - Hadoop Certification - 02 Sqoop Import   ******************
+
 
 # Avro file format is similar to JSON file format
 # If no file format given, by default is text file 
 # Warehouse directory is /user/cloudera/sqoop_import  --> this is the directory we created in HDFS to store mysql tables
-# BoundaryValQuery will apply min & max values of primary key values of the table, using that it will divide into exclusive buckets. Playlist building enterprise 	using hadoop using boundary queries 
+# BoundaryValQuery will apply min & max values of primary key values of the table, using that it will divide into exclusive buckets. Playlist building enterprise 	using hadoop using boundary queries . To addres the skew, we use boundary query.
+
 # .-m 12 is number of mappers is used to split each table into 12 threads and import data into HDFS. As we have 6 tables, it will run 6 MR jobs each with 12 threads to get the data into HDFS to warehouse directory which we specified 
  i. By default number of mappers are 4   
  i. comma is the default delimiter of the data 
@@ -256,6 +281,19 @@ sqoop import \
 --target-dir /user/cloudera/departments 
 --boundary-query "select 2, 8 from departments limit 1"
 
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username=retail_dba \
+--password=cloudera \
+--table orders \
+-m 2
+--target-dir /user/cloudera/orders 
+--boundary-query "select min(order_id), max(order_id) from orders where order_id between 11111 and 70000"
+
+or --boundary-query "select 111111,68883"  #hot coded here 
+
+
+
 # with --columns control argument. This will import only the required columns
 sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
@@ -267,7 +305,7 @@ sqoop import \
 --boundary-query "select 2, 8 from departments limit 1"
 --columns department_id,department_name
 
-# --table & --query are mutually exclusive. We cannot use both in the same query 
+# --table & --query are mutually exclusive. We cannot use both in the same script
 
 # --split-by
 $ sqoop import \
