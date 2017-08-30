@@ -786,6 +786,9 @@ $ hadoop fs -cat /user/cloudera/avro/part-m-00000.avro (this will display some j
 ***TO GET SCHEMA OF AVRO FILE USING avro-tools
 $ avro-tools getschema part-m-00000.avro
 
+*** TO READ TO JSON USING avro-tools 
+$avro-tools tojson part-m-00000.avro >> part-m-00000.json 
+$ view part-m-00000.json (JSON documents) 
 
 
 # A file with extension avsc will be created under the home directory(/home/cloudera) from which sqoop import is executed
