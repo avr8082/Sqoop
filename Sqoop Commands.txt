@@ -96,8 +96,8 @@ $ sqoop import-all-tables \
    --table orders \
   --target-dir /user/cloudera/sqoop_import/orders
   
-Target Dir = You need to provide the base directory where data needs to be copied. Here, directory is /user/cloudera/sqoop_import/orders
-Warehouse Dir = Directory will be created as table name and copied. Means , we MUST provide base directory like: /user/cloudera/sqoop_import ONLY (WTTHOUT TABLE NAME like below). It will create the sub directory with table name under base directory
+Target Directory = You need to provide the base directory where data needs to be copied. Here, directory is /user/cloudera/sqoop_import/orders
+Warehouse Directory = Directory will be created as table name and copied. Means , we MUST provide base directory like: /user/cloudera/sqoop_import ONLY (WTTHOUT TABLE NAME like below). It will create the sub directory with table name under base directory
 
 ***USING WAREHOUSE DIRECTORY
  $ sqoop import \
@@ -306,6 +306,13 @@ sqoop import \
 --columns department_id,department_name
 
 # --table & --query are mutually exclusive. We cannot use both in the same script
+--columns, --where can use separately 
+--columns can be used vertical split 
+--where can be used horizontal split 
+
+
+
+
 
 # --split-by
 $ sqoop import \
@@ -350,6 +357,7 @@ sqoop import \
 --target-dir /user/cloudera/departments
 
 
+***USING --query 
 
 #--query --> if we have 2 tables in source and import into HDFS. Make sure that we have $CONDITIONS to escape where condition
 sqoop import \
@@ -360,6 +368,23 @@ sqoop import \
 --target-dir /user/cloudera/order_join \
 --split-by order_id \
 --num-mappers 4 
+
+
+$ sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --query "select * from orders where \$CONDITION" \
+  --target_dir /user/cloudera/sqoop_import/orders \
+  --delete-target-dir \
+  --split-by order_id
+ 
+  
+  
+  
+
+
+
 
 # -- Getting delta (--where)
 sqoop import \
@@ -742,6 +767,26 @@ sqoop import \
   --table departments \
   --as-avrodatafile \
   --target-dir=/user/cloudera/departments_avrofile
+
+*** LOADING departments file as AVRO file (*.avro) 
+create /user/cloudera/avro directory before script exection using hadoop fs -mkdir 
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --as-avrodatafile \
+  --target-dir=/user/cloudera/avro
+  
+    hadoop fs -ls  /user/cloudera/avro
+    table is copied as : /user/cloudera/avro/part-m-00000.avro
+
+*** $ avro-tools ( avro is kind of Binary JSON (BSON) format)
+$ hadoop fs -cat /user/cloudera/avro/part-m-00000.avro (this will display some jumbled chars.If you want to readable format, we can use avro-tools) 
+***TO GET SCHEMA OF AVRO FILE USING avro-tools
+$ avro-tools getschema part-m-00000.avro
+
+
 
 # A file with extension avsc will be created under the home directory(/home/cloudera) from which sqoop import is executed
 # Copy avsc file to HDFS location
