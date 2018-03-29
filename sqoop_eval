@@ -1,0 +1,3 @@
+sqoop eval \
+--connect jdbc:mysql://XXXXX:3306 \
+--query "select * from table limit 10" 
